@@ -1,0 +1,52 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Runtime files
+*.pid
+*.pid.lock
+
+# Compiler output
+dist/
+build/
+
+# OS files
+Thumbs.db
+.DS_Store
+._.DS_Store
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Package manager lock files (optional)
+# package-lock.json
+# yarn.lock
+
+# File uploads
+uploads/*
+!uploads/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
