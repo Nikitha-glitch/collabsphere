@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details | CollabSphere</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .details-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-bottom: 4rem;
+        }
+
+        .main-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .side-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .glass-panel {
+            padding: 2rem;
+        }
+
+        .tag-pill {
+            background: rgba(79, 70, 229, 0.15);
+            color: #818CF8;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-sm);
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">CollabSphere</a>
+        <div class="nav-links">
+            <a href="projects.html" class="nav-link">Explore</a>
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="main-content container animate-fade-in-up">
+        <!-- Breadcrumb / Back button -->
+        <a href="projects.html" style="color: var(--text-muted); margin-bottom: 2rem; display: inline-block;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Projects
+        </a>
+
+        <div class="details-layout" id="projectDetailsContainer">
+            <div class="main-info">
+                <div class="glass-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <h1 id="pdTitle" class="text-gradient">Loading...</h1>
+                        <span id="pdCategory" class="tag-pill">Category</span>
+                    </div>
+                    <p id="pdCreator" style="color: var(--text-muted); margin-top: 5px;">Created by: <span style="color:white">--</span></p>
+
+                    <h3 class="mt-8 mb-4">Project Idea & Description</h3>
+                    <p id="pdDescription" style="white-space: pre-line; line-height: 1.8;">...</p>
+                </div>
+
+                <div class="glass-panel">
+                    <h3 class="mb-4">Required Skills</h3>
+                    <div id="pdSkills" style="display: flex; gap:10px; flex-wrap: wrap;">
+                        <span class="tag-pill">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-info">
+                <div class="glass-panel text-center">
+                    <h3 class="mb-2">Want to join?</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;" class="mb-4">Send a request to the Project Lead.</p>
+                    
+                    <textarea id="joinCoverLetter" class="form-input mb-4" placeholder="Briefly explain why you want to join and your skills..." style="height: 100px; resize: none;"></textarea>
+                    
+                    <button class="btn btn-primary" id="joinBtn" style="width: 100%;">
+                        <i class="fa-solid fa-paper-plane"></i> Send Join Request
+                    </button>
+                </div>
+
+                <div class="glass-panel">
+                    <h3 class="mb-4">Team (<span id="pdTeamSize">0</span>)</h3>
+                    <div class="member-list" id="pdMembers">
+                        <!-- Members populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-container"></div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/projects.js"></script>
+</body>
+</html>

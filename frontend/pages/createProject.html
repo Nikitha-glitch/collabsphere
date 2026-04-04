@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Project | CollabSphere</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 0;
+        }
+
+        .form-section {
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        textarea.form-input {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .skill-badge {
+            background: rgba(79, 70, 229, 0.2);
+            color: #818CF8;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .skill-badge button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">CollabSphere</a>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="projects.html" class="nav-link">Explore</a>
+        </div>
+    </nav>
+
+    <div class="main-content container">
+        <div class="form-container animate-fade-in-up">
+            <h1 class="mb-2">Pitch Your Idea</h1>
+            <p class="mb-8" style="color: var(--text-muted)">Need a co-founder? Outline your project and team requirements here.</p>
+
+            <form id="createProjectForm">
+                <!-- Basic Info -->
+                <div class="glass-panel form-section">
+                    <h3 class="mb-4">Project Overview</h3>
+                    <div class="form-group">
+                        <label class="form-label" for="title">Project Idea / Title</label>
+                        <input type="text" id="title" class="form-input" required placeholder="e.g. AI-powered Study Planner">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="category">Category</label>
+                        <select id="category" class="form-input" required>
+                            <option value="Web Development">Web Development</option>
+                            <option value="Mobile Development">Mobile Development</option>
+                            <option value="Machine Learning">Machine Learning</option>
+                            <option value="AI">AI</option>
+                            <option value="Blockchain">Blockchain</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="description">Detailed Description</label>
+                        <textarea id="description" class="form-input" required placeholder="Describe the problem, solution, and current progress..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Team Requirements -->
+                <div class="glass-panel form-section">
+                    <h3 class="mb-4">Team Requirements</h3>
+                    <div class="form-group">
+                        <label class="form-label" for="reqSkillInput">Required Skills from Teammates</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="reqSkillInput" class="form-input" placeholder="e.g. ReactJS, Node.js, Python">
+                            <button type="button" class="btn btn-secondary" id="addSkillBtn">Add</button>
+                        </div>
+                        <div class="skills-container" id="skillsList"></div>
+                    </div>
+
+                    <div class="form-row" style="display:flex; gap:1.5rem;">
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label" for="teamSizeMin">Min Team Size</label>
+                            <input type="number" id="teamSizeMin" class="form-input" value="1" min="1">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label" for="teamSizeMax">Max Team Size</label>
+                            <input type="number" id="teamSizeMax" class="form-input" value="4" min="1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-right">
+                    <a href="dashboard.html" class="btn btn-secondary" style="margin-right:1rem;">Cancel</a>
+                    <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem;">Publish Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toast-container"></div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/projects.js"></script>
+</body>
+</html>

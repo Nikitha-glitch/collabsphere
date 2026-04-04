@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details | CollabSphere</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .event-hero {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(16, 185, 129, 0.1));
+            border-radius: var(--radius-lg);
+            margin-top: 2rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-bottom: 4rem;
+        }
+
+        .info-card {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+        }
+
+        .info-card .icon {
+            font-size: 1.5rem;
+            color: #34D399;
+            width: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">CollabSphere</a>
+        <div class="nav-links">
+            <a href="events.html" class="nav-link">Events</a>
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="main-content container animate-fade-in-up">
+        <a href="events.html" style="color: var(--text-muted); display: inline-block;"><i class="fa-solid fa-arrow-left"></i> Back to Events</a>
+
+        <div class="event-hero" id="eventHero">
+            <h1 id="edTitle" style="font-size:3rem; margin-bottom:10px;">Loading Event...</h1>
+            <p id="edType" class="tag" style="background:#34D399; color:white; font-size:1rem;">Type</p>
+            <p style="margin-top: 10px; color: var(--text-muted);">Organized by <strong id="edOrganizer" style="color:white;">--</strong></p>
+        </div>
+
+        <div class="details-grid">
+            <div class="glass-panel" style="padding: 2rem;">
+                <h3 class="mb-4">About the Event</h3>
+                <p id="edDescription" style="white-space: pre-line; line-height: 1.8;">...</p>
+            </div>
+
+            <div class="glass-panel" style="padding: 2rem; height: fit-content;">
+                <h3 class="mb-4">Event Details</h3>
+                
+                <div class="info-card">
+                    <div class="icon"><i class="fa-solid fa-calendar"></i></div>
+                    <div>
+                        <small style="color:var(--text-muted)">Starts At</small>
+                        <div id="edStart">--</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="icon" style="color:#F87171"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div>
+                        <small style="color:var(--text-muted)">Ends At</small>
+                        <div id="edEnd">--</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="icon" style="color:#60A5FA"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <small style="color:var(--text-muted)">Capacity</small>
+                        <div id="edCapacity">--</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary mt-4" style="width:100%;" id="registerEventBtn">Register Now</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-container"></div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/events.js"></script>
+</body>
+</html>

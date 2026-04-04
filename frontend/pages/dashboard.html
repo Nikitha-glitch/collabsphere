@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | CollabSphere</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: calc(100vh - 80px);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            background: rgba(15, 23, 42, 0.4);
+            border-right: 1px solid var(--glass-border);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sidebar-link {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all var(--transition-fast);
+        }
+
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(79, 70, 229, 0.1);
+            color: white;
+        }
+
+        .content-area {
+            padding: 2rem 3rem;
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .user-info h2 {
+            font-size: 2rem;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .project-card {
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(79, 70, 229, 0.15);
+            color: #818CF8;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 5px;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">CollabSphere</a>
+        <div class="nav-links">
+            <a href="events.html" class="nav-link">Events</a>
+            <a href="projects.html" class="nav-link">Explore</a>
+            <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+        </div>
+    </nav>
+
+    <div class="main-content dashboard-layout">
+        <div class="sidebar">
+            <a href="dashboard.html" class="sidebar-link active"><i class="fa-solid fa-house"></i> Overview</a>
+            <a href="createProject.html" class="sidebar-link"><i class="fa-solid fa-plus"></i> Create Project</a>
+            <a href="projects.html" class="sidebar-link"><i class="fa-solid fa-magnifying-glass"></i> Find Projects</a>
+            <a href="#" class="sidebar-link"><i class="fa-solid fa-envelope"></i> Join Requests</a>
+        </div>
+
+        <div class="content-area animate-fade-in-up">
+            <div class="user-header">
+                <div class="user-info">
+                    <h2 id="userNameDisplay">Welcome, User</h2>
+                    <p style="color: var(--text-muted);" id="userCollegeDisplay">Student</p>
+                </div>
+                <a href="createProject.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Start a Project</a>
+            </div>
+
+            <div class="dashboard-sections">
+                <h3 class="mb-4">My Projects</h3>
+                <div id="myProjectsGrid" class="card-grid mb-8">
+                    <!-- Project Cards populate here -->
+                </div>
+
+                <h3 class="mb-4">Received Join Requests</h3>
+                <div id="requestsGrid" class="glass-panel" style="padding: 1.5rem;">
+                    <p style="color:var(--text-muted);">No pending requests found.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
