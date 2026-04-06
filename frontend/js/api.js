@@ -1,10 +1,18 @@
+import { 
+  db, auth, analytics,
+  collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from './firebase-init.js';
+import { CONFIG } from './config.js';
+
 /**
- * API Utility for structured network requests and authentication persistence
+ * API Utility for structured network requests and authentication persistence using Firebase
  */
 
 class ApiService {
+
   constructor() {
-    this.baseUrl = window.CONFIG.API_URL;
+    this.baseUrl = CONFIG.API_URL;
   }
 
   get token() {
@@ -18,6 +26,9 @@ class ApiService {
   clearToken() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    if (auth) {
+      signOut(auth);
+    }
   }
 
   getCurrentUser() {
@@ -30,75 +41,153 @@ class ApiService {
   }
 
   async request(endpoint, options = {}) {
-    console.log(`[MOCK API] Intercepted ${options.method || 'GET'} ${endpoint}`);
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 600));
+    console.log(`[FIREBASE API] Intercepted ${options.method || 'GET'} ${endpoint}`);
+    const method = options.method || 'GET';
+    const body = options.body ? JSON.parse(options.body) : null;
 
-    // MOCK DATA ROUTER
-    if (endpoint.includes('/auth/register')) {
-      return { token: 'mock-token-123' };
-    }
-    
-    if (endpoint.includes('/auth/login')) {
-      return { token: 'mock-token-123' };
-    }
-    
-    if (endpoint.includes('/auth/me')) {
-      return { data: { _id: 'u1', firstName: 'John', lastName: 'Doe', email: 'john@college.edu', institution: 'MIT', degree: '3rd Year', major: 'CS' } };
-    }
-
-    if (endpoint.includes('/projects/user/')) {
-      return {
-        data: [
-          { _id: 'p1', title: 'AI Study Planner', description: 'Building an AI tool to schedule and map study habits for exams.', category: 'AI', teamSize: { max: 4 }, status: 'active', requiredSkills: ['Python', 'React'] }
-        ]
-      };
-    }
-
-    if (endpoint.includes('/join-requests') && (options.method === 'GET' || !options.method)) {
-      return {
-        data: [
-          { _id: 'r1', status: 'pending', coverLetter: 'I am a skilled React dev and love your idea!', proposedRole: 'Frontend Lead', project: { creator: 'u1', title: 'AI Study Planner'}, requester: { firstName: 'Alice', lastName: 'Smith' }}
-        ]
-      };
-    }
-
-    if (endpoint === '/projects' && (options.method === 'GET' || !options.method)) {
-      return {
-        data: [
-          { _id: 'p1', title: 'AI Study Planner', description: 'Building an AI tool to schedule and map study habits for exams.', category: 'AI', teamSize: { max: 4 }, status: 'active', requiredSkills: ['Python', 'React'] },
-          { _id: 'p2', title: 'Campus Ride Share', description: 'An app for students to safely carpool to campus.', category: 'Mobile Development', teamSize: { max: 3 }, status: 'planning', requiredSkills: ['Flutter', 'Firebase'] },
-          { _id: 'p3', title: 'Blockchain Voting', description: 'Decentralized voting system for student governments.', category: 'Blockchain', teamSize: { max: 5 }, status: 'planning', requiredSkills: ['Solidity', 'Web3.js'] }
-        ]
-      };
-    }
-    
-    // Single project fallback mock
-    if (endpoint.includes('/projects/') && !endpoint.includes('/user/')) {
-       return {
-         data: { _id: 'p1', title: 'AI Study Planner', description: 'Building an AI tool to schedule and map study habits for exams.', category: 'AI', teamSize: { max: 4 }, status: 'active', requiredSkills: ['Python', 'React'], creator: { firstName: 'Mock', lastName: 'User' } }
-       }
-    }
-
-    if (endpoint.includes('/events') && (options.method === 'GET' || !options.method)) {
-      if (endpoint === '/events') {
-        const nextWeek = new Date(); nextWeek.setDate(nextWeek.getDate() + 7);
-        return {
-          data: [
-            { _id: 'e1', title: 'Global AI Hackathon', eventType: 'hackathon', capacity: 300, startDate: nextWeek.toISOString(), endDate: nextWeek.toISOString(), description: 'Compete with colleges around the globe in this 48hr AI challenge', organizer: { firstName: 'ML', lastName: 'Society' } },
-            { _id: 'e2', title: 'Web3 Startup Meetup', eventType: 'meetup', capacity: 50, startDate: new Date().toISOString(), endDate: new Date().toISOString(), description: 'Networking event for aspiring web3 developers.', organizer: { firstName: 'Decentral', lastName: 'Club' } }
-          ]
+    try {
+      // --- AUTHENTICATION ---
+      if (endpoint.includes('/auth/register')) {
+        const userCredential = await createUserWithEmailAndPassword(auth, body.email, body.password);
+        const user = userCredential.user;
+        const profileData = {
+          firstName: body.firstName,
+          lastName: body.lastName,
+          email: body.email,
+          institution: body.institution || '',
+          degree: body.degree || '',
+          major: body.major || '',
+          createdAt: new Date().toISOString()
         };
+        await setDoc(doc(db, "users", user.uid), profileData);
+        return { token: user.uid };
       }
-      // Single event mock
-      return {
-        data: { _id: 'e1', title: 'Global AI Hackathon', eventType: 'hackathon', capacity: 300, startDate: new Date().toISOString(), endDate: new Date().toISOString(), description: 'Compete with colleges around the globe in this 48hr AI challenge', organizer: { firstName: 'ML', lastName: 'Society' } }
+      
+      if (endpoint.includes('/auth/login')) {
+        const userCredential = await signInWithEmailAndPassword(auth, body.email, body.password);
+        return { token: userCredential.user.uid };
       }
-    }
+      
+      if (endpoint.includes('/auth/me')) {
+        const uid = this.token;
+        if (!uid) throw new Error('Not authenticated');
+        const docSnap = await getDoc(doc(db, "users", uid));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          data._id = uid;
+          return { data };
+        } else {
+          throw new Error('User profile not found');
+        }
+      }
 
-    // Default mock response for POST/PUT (like Join requests, project creation)
-    return { success: true, message: 'Mock action completed' };
+      // --- PROJECTS ---
+      if (endpoint === '/projects' && method === 'GET') {
+        const querySnapshot = await getDocs(collection(db, "projects"));
+        const projects = [];
+        querySnapshot.forEach(d => projects.push({ _id: d.id, ...d.data() }));
+        return { data: projects };
+      }
+
+      if (endpoint === '/projects' && method === 'POST') {
+        const userProfile = this.getCurrentUser() || { firstName: 'Anonymous', lastName: '' };
+        const projectData = {
+          ...body,
+          creatorId: this.token,
+          creator: { firstName: userProfile.firstName, lastName: userProfile.lastName },
+          status: 'active',
+          createdAt: new Date().toISOString()
+        };
+        const docRef = await addDoc(collection(db, "projects"), projectData);
+        return { success: true, _id: docRef.id };
+      }
+
+      if (endpoint.includes('/projects/user/') && method === 'GET') {
+        const uid = this.token;
+        if (!uid) return { data: [] };
+        const q = query(collection(db, "projects"), where("creatorId", "==", uid));
+        const querySnapshot = await getDocs(q);
+        const projects = [];
+        querySnapshot.forEach(d => projects.push({ _id: d.id, ...d.data() }));
+        return { data: projects };
+      }
+
+      // Single project GET (/projects/:id)
+      if (endpoint.match(/\/projects\/[a-zA-Z0-9_-]+$/) && method === 'GET') {
+        const projectId = endpoint.split('/').pop();
+        const docSnap = await getDoc(doc(db, "projects", projectId));
+        if (docSnap.exists()) {
+           const data = docSnap.data();
+           data._id = docSnap.id;
+           return { data };
+        }
+        throw new Error('Project not found');
+      }
+
+      // --- EVENTS ---
+      if (endpoint === '/events' && method === 'GET') {
+        const querySnapshot = await getDocs(collection(db, "events"));
+        const events = [];
+        querySnapshot.forEach(d => events.push({ _id: d.id, ...d.data() }));
+        return { data: events };
+      }
+
+      if (endpoint === '/events' && method === 'POST') {
+        const eventData = { ...body, creatorId: this.token, createdAt: new Date().toISOString() };
+        const docRef = await addDoc(collection(db, "events"), eventData);
+        return { success: true, _id: docRef.id };
+      }
+
+      // --- JOIN REQUESTS ---
+      if (endpoint === '/join-requests' && method === 'GET') {
+        const querySnapshot = await getDocs(collection(db, "join_requests"));
+        const requests = [];
+        querySnapshot.forEach(d => requests.push({ _id: d.id, ...d.data() }));
+        return { data: requests };
+      }
+
+      if (endpoint === '/join-requests' && method === 'POST') {
+         const userProfile = this.getCurrentUser();
+         const docSnap = await getDoc(doc(db, "projects", body.project));
+         let projData = {};
+         if (docSnap.exists()) {
+            projData = { _id: docSnap.id, ...docSnap.data() };
+         }
+
+         const requestData = { 
+             ...body, 
+             requesterId: this.token, 
+             requester: { firstName: userProfile?.firstName, lastName: userProfile?.lastName },
+             project: { 
+                 _id: projData._id,
+                 title: projData.title,
+                 creator: projData.creatorId 
+             },
+             status: 'pending', 
+             createdAt: new Date().toISOString() 
+         };
+         const docRef = await addDoc(collection(db, "join_requests"), requestData);
+         return { success: true, _id: docRef.id };
+      }
+
+      if (endpoint.match(/\/join-requests\/[a-zA-Z0-9_-]+$/) && method === 'PUT') {
+        const reqId = endpoint.split('/').pop();
+        await updateDoc(doc(db, "join_requests", reqId), { status: body.status });
+        return { success: true };
+      }
+
+      // Fallback
+      console.warn('Unhandled endpoint:', endpoint);
+      return { success: true, message: 'Action completed (fallback)' };
+
+    } catch (error) {
+       console.error("Firebase API Error:", error);
+       let errMessage = error.message;
+       if (error.code === 'auth/invalid-credential') errMessage = 'Invalid email or password.';
+       if (error.code === 'auth/email-already-in-use') errMessage = 'Email is already taken.';
+       if (error.code === 'auth/weak-password') errMessage = 'Password is too weak.';
+       throw new Error(errMessage);
+    }
   }
 
   // HTTP wrappers
@@ -120,4 +209,7 @@ class ApiService {
 }
 
 // Global instance
-window.api = new ApiService();
+const api = new ApiService();
+window.api = api; // Keep compatible with non-module scripts
+export { api, CONFIG };
+

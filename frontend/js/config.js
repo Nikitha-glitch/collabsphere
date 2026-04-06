@@ -1,6 +1,7 @@
-const CONFIG = {
+export const CONFIG = {
   API_URL: 'http://localhost:5000/api', // Maps to backend localhost port 5000
 };
 
-// Expose generically
+// Keep for legacy non-module scripts if any
 window.CONFIG = CONFIG;
+

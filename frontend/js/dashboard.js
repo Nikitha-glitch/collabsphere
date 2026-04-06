@@ -1,8 +1,12 @@
+import { api } from './api.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
+
     // Shared: Display user info if logged in
     const userNameDisplay = document.getElementById('userNameDisplay');
     const userCollegeDisplay = document.getElementById('userCollegeDisplay');
-    const user = window.api.getCurrentUser();
+    const user = api.getCurrentUser();
+
 
     if (userNameDisplay && user) {
         userNameDisplay.textContent = `Welcome, ${user.firstName}`;
@@ -29,7 +33,8 @@ async function fetchDashboardData(userId) {
 
     try {
         // According to backend: GET /api/projects/user/:userId
-        const res = await window.api.get(`/projects/user/${userId}`);
+        const res = await api.get(`/projects/user/${userId}`);
+
         const projects = res.data || [];
 
         if (projects.length === 0) {
@@ -59,7 +64,8 @@ async function fetchDashboardData(userId) {
 
         // Fetch Join Requests
         // According to backend GET /api/join-requests gives requests (might be for user's projects)
-        const reqsRes = await window.api.get('/join-requests');
+        const reqsRes = await api.get('/join-requests');
+
         const requests = reqsRes.data || [];
         
         // Filter requests pointing to projects creator==userId
@@ -92,11 +98,11 @@ async function fetchDashboardData(userId) {
 
 window.handleRequest = async (reqId, status) => {
     try {
-        await window.api.put(`/join-requests/${reqId}`, { status });
-        const user = window.api.getCurrentUser();
-        // showToast('Request updated', 'success'); // if imported
+        await api.put(`/join-requests/${reqId}`, { status });
+        const user = api.getCurrentUser();
         fetchDashboardData(user._id);
     } catch (err) {
         alert(err.message);
     }
 };
+

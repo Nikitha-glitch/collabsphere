@@ -1,4 +1,7 @@
+import { api } from './api.js';
+
 document.addEventListener('DOMContentLoaded', () => {
+
     const openChatBtn = document.getElementById('openChatBtn');
     const chatWindow = document.getElementById('chatWindow');
     const chatMessages = document.getElementById('chatMessages');
@@ -48,11 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            // Check if endpoint exists on backend. 
             // In BACKEND_SETUP.md: POST /api/chatbot/message 
             // Body expects some shape, usually { message: text }
-            const response = await window.api.post('/chatbot/message', { message: msgText });
+            const response = await api.post('/chatbot/message', { message: msgText });
             document.getElementById(typingId).remove();
+
             
             // Assuming response contains a 'reply' or 'message' property
             const botReply = response.reply || response.response || response.message || "I'm sorry, I didn't understand the response from the server.";

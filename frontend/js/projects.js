@@ -1,4 +1,7 @@
+import { api } from './api.js';
+
 document.addEventListener('DOMContentLoaded', () => {
+
     
     // --- CREATE PROJECT LOGIC ---
     const createForm = document.getElementById('createProjectForm');
@@ -60,9 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                await window.api.post('/projects', payload);
+                await api.post('/projects', payload);
                 if (window.showToast) window.showToast('Project Created!', 'success');
                 setTimeout(() => window.location.href = 'projects.html', 1000);
+
             } catch (err) {
                 if (window.showToast) window.showToast(err.message, 'error');
                 else alert(err.message);
@@ -77,8 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (projectsGrid) {
         const fetchProjects = async () => {
             try {
-                const res = await window.api.get('/projects');
+                const res = await api.get('/projects');
                 const projects = res.data || [];
+
                 
                 if (projects.length === 0) {
                     projectsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center;">No projects found. Be the first to create one!</div>';
@@ -132,8 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const fetchDetails = async () => {
             try {
-                const res = await window.api.get(`/projects/${projectId}`);
+                const res = await api.get(`/projects/${projectId}`);
                 const p = res.data;
+
 
                 document.getElementById('pdTitle').textContent = p.title;
                 document.getElementById('pdCategory').textContent = p.category;
@@ -168,9 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         btn.disabled = true;
                         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
                         
-                        await window.api.post('/join-requests', { project: projectId, coverLetter });
+                        await api.post('/join-requests', { project: projectId, coverLetter });
                         
                         btn.innerHTML = '<i class="fa-solid fa-check"></i> Request Sent';
+
                         btn.style.background = '#10B981'; // green
                     } catch (err) {
                         alert(err.message);

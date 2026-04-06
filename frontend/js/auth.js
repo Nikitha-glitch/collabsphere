@@ -1,3 +1,5 @@
+import { api } from './api.js';
+
 // Utility for showing toasts
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -18,9 +20,10 @@ function showToast(message, type = 'success') {
 document.addEventListener('DOMContentLoaded', () => {
     
     // Redirect if already logged in and on auth pages
-    if (window.api.token && (window.location.pathname.includes('login.html') || window.location.pathname.includes('register.html'))) {
+    if (api.token && (window.location.pathname.includes('login.html') || window.location.pathname.includes('register.html'))) {
         window.location.href = 'dashboard.html';
     }
+
 
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
@@ -42,11 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                const response = await window.api.post('/auth/register', payload);
-                window.api.setToken(response.token);
+                const response = await api.post('/auth/register', payload);
+                api.setToken(response.token);
                 // fetch user
-                const userRes = await window.api.get('/auth/me');
-                window.api.setCurrentUser(userRes.data);
+                const userRes = await api.get('/auth/me');
+                api.setCurrentUser(userRes.data);
+
                 
                 showToast('Registration successful! Redirecting...', 'success');
                 setTimeout(() => {
@@ -75,11 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                const response = await window.api.post('/auth/login', payload);
-                window.api.setToken(response.token);
+                const response = await api.post('/auth/login', payload);
+                api.setToken(response.token);
                 // get user profile info
-                const userRes = await window.api.get('/auth/me');
-                window.api.setCurrentUser(userRes.data);
+                const userRes = await api.get('/auth/me');
+                api.setCurrentUser(userRes.data);
+
 
                 showToast('Login successful!', 'success');
                 setTimeout(() => {
@@ -98,8 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            window.api.clearToken();
+            api.clearToken();
             window.location.href = 'index.html';
         });
     }
+
 });

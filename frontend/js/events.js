@@ -1,4 +1,7 @@
+import { api } from './api.js';
+
 document.addEventListener('DOMContentLoaded', () => {
+
 
     // --- CREATE EVENT LOGIC ---
     const createEventForm = document.getElementById('createEventForm');
@@ -21,9 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                await window.api.post('/events', payload);
+                await api.post('/events', payload);
                 if (window.showToast) window.showToast('Event Created Successfully!', 'success');
                 setTimeout(() => window.location.href = 'events.html', 1000);
+
             } catch (err) {
                 if (window.showToast) window.showToast(err.message, 'error');
                 else alert(err.message);
@@ -38,8 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (eventsGrid) {
         const fetchEvents = async () => {
             try {
-                const res = await window.api.get('/events');
+                const res = await api.get('/events');
                 const events = res.data || [];
+
                 
                 if (events.length === 0) {
                     eventsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center;">No upcoming events.</div>';
@@ -76,8 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const fetchDetails = async () => {
             try {
-                const res = await window.api.get(`/events/${eventId}`);
+                const res = await api.get(`/events/${eventId}`);
                 const ev = res.data;
+
 
                 document.getElementById('edTitle').textContent = ev.title;
                 document.getElementById('edType').textContent = ev.eventType.toUpperCase();
@@ -92,8 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         regBtn.disabled = true;
                         regBtn.textContent = 'Registering...';
-                        await window.api.post(`/events/${eventId}/register`);
+                        await api.post(`/events/${eventId}/register`);
                         regBtn.textContent = 'Registered Complete';
+
                         regBtn.style.background = '#10B981';
                     } catch(err) {
                         alert(err.message);
