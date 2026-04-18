@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 eventType: document.getElementById('eventType').value,
                 category: document.getElementById('category').value,
                 description: document.getElementById('description').value.trim(),
+                collegeVenue: document.getElementById('collegeVenue').value.trim(),
+                contactPhone: document.getElementById('contactPhone').value.trim(),
+                contactEmail: document.getElementById('contactEmail').value.trim(),
                 startDate: new Date(document.getElementById('startDate').value).toISOString(),
                 endDate: new Date(document.getElementById('endDate').value).toISOString(),
                 capacity: parseInt(document.getElementById('capacity').value) || 100,
@@ -57,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="fa-regular fa-calendar"></i> ${new Date(e.startDate).toLocaleDateString()}
                         </div>
                         <h3 style="font-size: 1.25rem;">${e.title}</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-top:5px;">
+                            <i class="fa-solid fa-location-dot"></i> ${e.collegeVenue || 'Multiple Locations'}
+                        </p>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
                             <span class="event-type-badge">${e.eventType}</span>
                             <span style="color:var(--text-muted); font-size:0.8rem;"><i class="fa-solid fa-users"></i> ${e.capacity}</span>
@@ -86,12 +92,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                 document.getElementById('edTitle').textContent = ev.title;
-                document.getElementById('edType').textContent = ev.eventType.toUpperCase();
-                document.getElementById('edOrganizer').textContent = `${ev.organizer?.firstName || 'Unknown'} ${ev.organizer?.lastName || ''}`;
+                document.getElementById('edType').textContent = (ev.eventType || 'Event').toUpperCase();
+                document.getElementById('edOrganizer').textContent = ev.organizer ? `${ev.organizer.firstName || ''} ${ev.organizer.lastName || ''}` : 'Unknown Organizer';
                 document.getElementById('edDescription').textContent = ev.description;
                 document.getElementById('edStart').textContent = new Date(ev.startDate).toLocaleString();
                 document.getElementById('edEnd').textContent = new Date(ev.endDate).toLocaleString();
                 document.getElementById('edCapacity').textContent = ev.capacity;
+
+                // New Venue & Contact fields
+                document.getElementById('edVenue').textContent = ev.collegeVenue || 'N/A';
+                document.getElementById('edPhone').textContent = ev.contactPhone || 'N/A';
+                document.getElementById('edEmail').textContent = ev.contactEmail || 'N/A';
 
                 const regBtn = document.getElementById('registerEventBtn');
                 regBtn.addEventListener('click', async () => {

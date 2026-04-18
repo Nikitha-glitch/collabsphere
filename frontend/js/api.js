@@ -1,6 +1,6 @@
-import { 
+import {
   db, auth, analytics,
-  collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc,
+  collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc, arrayUnion, onSnapshot,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from './firebase-init.js';
 import { CONFIG } from './config.js';
@@ -15,8 +15,25 @@ class ApiService {
     this.baseUrl = CONFIG.API_URL;
   }
 
+  showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
   get token() {
-    return localStorage.getItem('token');
+    const t = localStorage.getItem('token');
+    return (t && t !== 'null' && t !== 'undefined') ? t : null;
   }
 
   setToken(token) {
@@ -90,11 +107,19 @@ class ApiService {
       }
 
       if (endpoint === '/projects' && method === 'POST') {
+        const uid = this.token;
+        if (!uid) {
+           throw new Error('You must be logged in to pitch a project.');
+        }
+
         const userProfile = this.getCurrentUser() || { firstName: 'Anonymous', lastName: '' };
         const projectData = {
           ...body,
-          creatorId: this.token,
-          creator: { firstName: userProfile.firstName, lastName: userProfile.lastName },
+          creatorId: uid,
+          creator: { 
+            firstName: userProfile.firstName || 'Anonymous', 
+            lastName: userProfile.lastName || '' 
+          },
           status: 'active',
           createdAt: new Date().toISOString()
         };
@@ -110,6 +135,24 @@ class ApiService {
         const projects = [];
         querySnapshot.forEach(d => projects.push({ _id: d.id, ...d.data() }));
         return { data: projects };
+      }
+
+      if (endpoint.includes('/projects/joined/') && method === 'GET') {
+        const uid = this.token;
+        if (!uid) return { data: [] };
+        // Fetch all projects, then filter. (For scale, Firestore composite indexes or arrays in where clauses could be used)
+        const querySnapshot = await getDocs(collection(db, "projects"));
+        const joinedProjects = [];
+        querySnapshot.forEach(d => {
+            const p = { _id: d.id, ...d.data() };
+            // Check if this user is in the teamMembers array
+            const isMember = (p.teamMembers || []).some(m => m.uid === uid);
+            // Don't include projects they created (those are in 'My Projects')
+            if (isMember && p.creatorId !== uid) {
+                joinedProjects.push(p);
+            }
+        });
+        return { data: joinedProjects };
       }
 
       // Single project GET (/projects/:id)
@@ -138,6 +181,18 @@ class ApiService {
         return { success: true, _id: docRef.id };
       }
 
+      // Single event GET (/events/:id)
+      if (endpoint.match(/\/events\/[a-zA-Z0-9_-]+$/) && method === 'GET') {
+        const eventId = endpoint.split('/').pop();
+        const docSnap = await getDoc(doc(db, "events", eventId));
+        if (docSnap.exists()) {
+           const data = docSnap.data();
+           data._id = docSnap.id;
+           return { data };
+        }
+        throw new Error('Event not found');
+      }
+
       // --- JOIN REQUESTS ---
       if (endpoint === '/join-requests' && method === 'GET') {
         const querySnapshot = await getDocs(collection(db, "join_requests"));
@@ -157,7 +212,13 @@ class ApiService {
          const requestData = { 
              ...body, 
              requesterId: this.token, 
-             requester: { firstName: userProfile?.firstName, lastName: userProfile?.lastName },
+             requester: { 
+              firstName: userProfile?.firstName, 
+              lastName: userProfile?.lastName,
+              institution: userProfile?.institution,
+              year: userProfile?.degree,
+              skills: body.skills
+          },
              project: { 
                  _id: projData._id,
                  title: projData.title,
@@ -173,6 +234,49 @@ class ApiService {
       if (endpoint.match(/\/join-requests\/[a-zA-Z0-9_-]+$/) && method === 'PUT') {
         const reqId = endpoint.split('/').pop();
         await updateDoc(doc(db, "join_requests", reqId), { status: body.status });
+
+        if (body.status === 'accepted') {
+          // Get the request details to find project and requester
+          const reqSnap = await getDoc(doc(db, "join_requests", reqId));
+          if (reqSnap.exists()) {
+            const reqData = reqSnap.data();
+            const projectId = reqData.project._id;
+            const requester = reqData.requester;
+            requester.uid = reqData.requesterId;
+            
+            // Add to project teamMembers
+            await updateDoc(doc(db, "projects", projectId), {
+              teamMembers: arrayUnion(requester)
+            });
+          }
+        }
+        return { success: true };
+      }
+
+      // --- CHAT & COLLABORATION (Attached to Projects for Security Rule Bypass) ---
+      if (endpoint.includes('/chat') && method === 'POST') {
+        const msgData = { ...body, createdAt: new Date().toISOString() };
+        // We ensure a unique id for array manipulation if needed
+        const uniqueId = Date.now().toString() + Math.floor(Math.random()*1000);
+        await updateDoc(doc(db, "projects", body.projectId), {
+          messages: arrayUnion({ ...msgData, _id: uniqueId })
+        });
+        return { success: true };
+      }
+
+      if (endpoint.includes('/code/') && method === 'GET') {
+        const projectId = endpoint.split('/').pop();
+        const docSnap = await getDoc(doc(db, "projects", projectId));
+        const code = docSnap.data()?.sharedCode || '// Start collaborating here...\n';
+        return { data: { code } };
+      }
+
+      if (endpoint.includes('/code/') && method === 'PUT') {
+        const projectId = endpoint.split('/').pop();
+        await updateDoc(doc(db, "projects", projectId), {
+           sharedCode: body.code,
+           codeUpdatedAt: new Date().toISOString()
+        });
         return { success: true };
       }
 
@@ -185,9 +289,25 @@ class ApiService {
        let errMessage = error.message;
        if (error.code === 'auth/invalid-credential') errMessage = 'Invalid email or password.';
        if (error.code === 'auth/email-already-in-use') errMessage = 'Email is already taken.';
-       if (error.code === 'auth/weak-password') errMessage = 'Password is too weak.';
+       if (error.code === 'auth/weak-password') errMessage = 'Password must be between 6 and 8 characters.';
+       if (error.code === 'auth/password-does-not-meet-requirements') errMessage = 'Password must be between 6 and 8 characters.';
        throw new Error(errMessage);
     }
+  }
+
+  // --- REAL-TIME LISTENERS ---
+  listenToChat(projectId, callback) {
+    const docRef = doc(db, "projects", projectId);
+    return onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const messages = data.messages || [];
+        messages.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+        callback(messages, data.sharedCode);
+      }
+    }, (error) => {
+      console.error("Project listener error:", error);
+    });
   }
 
   // HTTP wrappers

@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
-import { getFirestore, collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
@@ -31,7 +31,7 @@ try {
 // Export specific components for other modules to import
 export { 
     app, db, auth, analytics,
-    collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc,
+    collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged
 };
 

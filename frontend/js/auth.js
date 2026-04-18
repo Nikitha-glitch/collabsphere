@@ -1,30 +1,11 @@
 import { api } from './api.js';
 
-// Utility for showing toasts
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.animation = 'slideOutRight 0.3s ease forwards';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+// Navigation redirect logic
+if (api.token && (window.location.pathname.includes('login.html') || window.location.pathname.includes('register.html'))) {
+    window.location.href = 'dashboard.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // Redirect if already logged in and on auth pages
-    if (api.token && (window.location.pathname.includes('login.html') || window.location.pathname.includes('register.html'))) {
-        window.location.href = 'dashboard.html';
-    }
-
-
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
@@ -52,12 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 api.setCurrentUser(userRes.data);
 
                 
-                showToast('Registration successful! Redirecting...', 'success');
+                api.showToast('Registration successful! Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1500);
             } catch (error) {
-                showToast(error.message, 'error');
+                api.showToast(error.message, 'error');
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
             }
@@ -86,12 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 api.setCurrentUser(userRes.data);
 
 
-                showToast('Login successful!', 'success');
+                api.showToast('Login successful!', 'success');
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
             } catch (error) {
-                showToast(error.message, 'error');
+                api.showToast(error.message, 'error');
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
             }

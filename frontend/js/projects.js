@@ -1,7 +1,13 @@
 import { api } from './api.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+// Session protection
+console.log('[AUTH] Checking session...', api.token ? 'Logged In' : 'Logged Out');
+if (!api.token) {
+    console.warn('[AUTH] No token found, redirecting to login...');
+    window.location.replace('login.html');
+}
 
+document.addEventListener('DOMContentLoaded', () => {
     
     // --- CREATE PROJECT LOGIC ---
     const createForm = document.getElementById('createProjectForm');
@@ -68,8 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => window.location.href = 'projects.html', 1000);
 
             } catch (err) {
-                if (window.showToast) window.showToast(err.message, 'error');
-                else alert(err.message);
+                api.showToast(err.message, 'error');
                 btn.textContent = 'Publish Project';
                 btn.disabled = false;
             }
@@ -168,13 +173,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Handle Join Request Button
                 document.getElementById('joinBtn').addEventListener('click', async () => {
-                    const coverLetter = document.getElementById('joinCoverLetter').value;
+                    const coverLetter = document.getElementById('joinCoverLetter').value.trim();
+                    const skills = document.getElementById('joinSkills').value.trim();
+
+                    if (!coverLetter || !skills) {
+                        if (window.showToast) api.showToast('Please fill in both fields.', 'error');
+                        else alert('Please fill in both fields.');
+                        return;
+                    }
+
                     try {
                         const btn = document.getElementById('joinBtn');
                         btn.disabled = true;
                         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
                         
-                        await api.post('/join-requests', { project: projectId, coverLetter });
+                        await api.post('/join-requests', { 
+                            project: projectId, 
+                            coverLetter,
+                            skills
+                        });
                         
                         btn.innerHTML = '<i class="fa-solid fa-check"></i> Request Sent';
 
