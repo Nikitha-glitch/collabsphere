@@ -4,6 +4,7 @@ import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from './firebase-init.js';
 import { CONFIG } from './config.js';
+import './chatbot.js';
 
 /**
  * API Utility for structured network requests and authentication persistence using Firebase
@@ -251,6 +252,19 @@ class ApiService {
           }
         }
         return { success: true };
+      }
+
+      // --- CHATBOT (Node.js API passthrough) ---
+      if (endpoint.startsWith('/chatbot')) {
+        const fetchRes = await fetch(`${this.baseUrl}${endpoint}`, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {})
+          },
+          body: options.body || null
+        });
+        return await fetchRes.json();
       }
 
       // --- CHAT & COLLABORATION (Attached to Projects for Security Rule Bypass) ---

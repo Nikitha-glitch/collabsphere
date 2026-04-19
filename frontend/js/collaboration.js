@@ -69,12 +69,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isMine = msg.senderId === user._id;
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${isMine ? 'sent' : 'received'}`;
+            // Safe escaping and whitespace preservation
+            const safeText = msg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             msgDiv.innerHTML = `
                 <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: 4px; display: flex; justify-content: space-between;">
                     <span>${msg.senderName}</span>
                     <span>${new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <div>${msg.text}</div>
+                <div style="white-space: pre-wrap; word-break: break-all; font-family: inherit;">${safeText}</div>
             `;
             chatMessages.appendChild(msgDiv);
         });
@@ -147,9 +149,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Event Listeners
-    sendMsgBtn.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+    sendMsgBtn.addEventListener('click', () => {
+        sendMessage();
+        chatInput.style.height = 'auto';
+    });
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+            chatInput.style.height = 'auto'; // Reset height
+        }
+    });
+
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if (this.value === '') {
+            this.style.height = 'auto';
+        }
     });
     saveCodeBtn.addEventListener('click', saveCode);
 

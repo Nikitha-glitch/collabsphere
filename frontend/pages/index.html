@@ -111,127 +111,6 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Chatbot UI Overlay */
-        #chatbot-overlay {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 9999;
-        }
-        
-        .chatbot-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            animation: pulse-glow 2s infinite;
-        }
-
-        .chatbot-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .chatbot-window {
-            position: absolute;
-            bottom: 80px;
-            right: 0;
-            width: 350px;
-            height: 500px;
-            background: var(--dark-surface);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--glass-shadow);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transform-origin: bottom right;
-            transition: all 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.9);
-        }
-
-        .chatbot-window.open {
-            opacity: 1;
-            pointer-events: all;
-            transform: scale(1);
-        }
-
-        .chatbot-header {
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chatbot-messages {
-            flex: 1;
-            padding: 1rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .chat-bubble {
-            max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            font-size: 0.9rem;
-        }
-
-        .chat-bubble.bot {
-            background: rgba(255,255,255,0.1);
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-
-        .chat-bubble.user {
-            background: var(--primary);
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-
-        .chatbot-input {
-            padding: 1rem;
-            border-top: 1px solid var(--glass-border);
-            display: flex;
-            gap: 10px;
-        }
-
-        .chatbot-input input {
-            flex: 1;
-            background: rgba(0,0,0,0.2);
-            border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
-            color: white;
-            outline: none;
-        }
-
-        .chatbot-input button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
     </style>
 </head>
 <body>
@@ -298,36 +177,12 @@
         </section>
     </div>
 
-    <!-- Smart Chatbot Overlay -->
-    <div id="chatbot-overlay">
-        <div class="chatbot-window" id="chatWindow">
-            <div class="chatbot-header">
-                <div style="width: 35px; height: 35px; background: linear-gradient(135deg, var(--primary), #818CF8); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-robot" style="color: white; font-size: 1.2rem;"></i>
-                </div>
-                <div>
-                    <h4 style="margin:0; font-size: 1rem;">CollabAI Guides</h4>
-                    <small style="color: var(--text-muted);">Online</small>
-                </div>
-            </div>
-            <div class="chatbot-messages" id="chatMessages">
-                <div class="chat-bubble bot">Hello! I am CollabAI. I can help you navigate the platform, explain features, and answer your project queries. How can I assist you today?</div>
-            </div>
-            <div class="chatbot-input">
-                <input type="text" id="chatInput" placeholder="Type your message..." autocomplete="off">
-                <button id="sendChatBtn"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </div>
-        <button class="chatbot-btn" id="openChatBtn">
-            <i class="fa-solid fa-message"></i>
-        </button>
-    </div>
+
 
     <!-- Scripts -->
     <script type="module" src="../js/firebase-init.js"></script>
     <script type="module" src="../js/config.js"></script>
     <script type="module" src="../js/api.js"></script>
-    <script type="module" src="../js/chatbot.js"></script>
 
 </body>
 </html>
