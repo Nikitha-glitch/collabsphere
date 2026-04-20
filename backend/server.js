@@ -21,9 +21,9 @@ connectDB();
 // Middleware Configuration
 // ==========================
 
-// CORS Configuration
+// CORS Configuration — allow all origins for local development
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: true, // Reflects request origin, allowing file:// and any localhost port
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

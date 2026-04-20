@@ -7,7 +7,8 @@ const mongoose = require('mongoose');
 
 /**
  * Connect to MongoDB database
- * @throws {Error} If connection fails
+ * Note: MongoDB is optional. Firebase is now the primary database.
+ * Server will continue to run even if MongoDB connection fails.
  */
 const connectDB = async () => {
   try {
@@ -39,15 +40,9 @@ const connectDB = async () => {
     });
 
   } catch (error) {
-    console.error('❌ MongoDB Connection Failed');
-    console.error('Error Code:', error.code);
-    console.error('Error Message:', error.message);
-    console.error('Full Error:', error);
-    console.log('\n📋 Troubleshooting Steps:');
-    console.log('1. Check MongoDB Atlas cluster status for service disruptions');
-    console.log('2. Verify credentials: nikitha / password in .env');
-    console.log('3. Ensure your IP (0.0.0.0/0) is whitelisted in Network Access');
-    console.log('4. Try connecting from MongoDB Compass to test credentials');
+    console.warn('⚠️  MongoDB Connection Failed - Continuing with Firebase only');
+    console.warn('Error Message:', error.message);
+    console.log('ℹ️  Server will operate using Firebase Firestore for data persistence');
     console.log('5. Check if your network/firewall blocks port 27017');
     
     // Don't exit, allow server to continue running for debugging

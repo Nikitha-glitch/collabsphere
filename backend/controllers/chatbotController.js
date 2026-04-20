@@ -11,6 +11,50 @@ const Project = require('../models/Project');
 const Event = require('../models/Event');
 
 /**
+ * Fallback AI Models
+ * Primary model first, then fallback options in order
+ */
+const AI_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-1.5-pro',
+  'gemini-1.5-flash',
+];
+
+/**
+ * Generate content using fallback models
+ * Attempts primary model, falls back to alternatives on failure
+ * @param {Object} genAI - GoogleGenerativeAI instance
+ * @param {string} prompt - The prompt to send
+ * @returns {Promise<string>} - Generated text response
+ */
+const generateWithFallback = async (genAI, prompt) => {
+  let lastError;
+  
+  for (let i = 0; i < AI_MODELS.length; i++) {
+    const modelName = AI_MODELS[i];
+    try {
+      console.log(`[CHATBOT] Attempting model: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const textResponse = result.response.text();
+      console.log(`[CHATBOT] Successfully used model: ${modelName}`);
+      return textResponse;
+    } catch (error) {
+      lastError = error;
+      console.warn(`[CHATBOT] Model ${modelName} failed:`, error.message);
+      
+      // If not the last model, try the next one
+      if (i < AI_MODELS.length - 1) {
+        console.log(`[CHATBOT] Trying fallback model...`);
+      }
+    }
+  }
+  
+  // All models failed
+  throw new Error(`All fallback models failed. Last error: ${lastError.message}`);
+};
+
+/**
  * Send message to chatbot
  * @route   POST /api/chatbot/message
  * @desc    Send a message to the chatbot and get response
@@ -31,13 +75,19 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // 1. Fetch lightweight context from DB
-    const projects = await Project.find({ isPublic: true }).select('title description category status -_id').limit(5).lean();
-    const activeProjects = projects.map(p => `- ${p.title} (${p.category}): ${p.description.substring(0,60)}... Status: ${p.status}`).join('\n');
-    
+    // 1. Fetch lightweight context from DB (Firebase is primary; MongoDB may be unavailable)
+    let activeProjects = 'Project data is managed via Firebase Firestore.';
+    try {
+      const projects = await Project.find({ isPublic: true }).select('title description category status -_id').limit(5).lean();
+      if (projects && projects.length > 0) {
+        activeProjects = projects.map(p => `- ${p.title} (${p.category}): ${p.description.substring(0,60)}... Status: ${p.status}`).join('\n');
+      }
+    } catch (dbErr) {
+      console.warn('[CHATBOT] MongoDB unavailable, continuing without project context:', dbErr.message);
+    }
+
     // 2. Setup Gemini AI instance
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // 3. Build the prompt
     const prompt = `
@@ -48,16 +98,16 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
     If they want to browse events, direct them to <a href="events.html" style="color:#34D399;text-decoration:underline;">Events</a>.
     If they want to create a project or event, direct them to dashboard.
     
-    Here is some real-time context about our active public projects from the database:
-    ${activeProjects || "No public projects currently available."}
+    Here is some real-time context about our active public projects:
+    ${activeProjects}
     
     User Query: "${message}"
     
     Respond directly to the user in a helpful manner.
     `;
 
-    const result = await model.generateContent(prompt);
-    const textResponse = result.response.text();
+    // 4. Generate response with fallback models
+    const textResponse = await generateWithFallback(genAI, prompt);
 
     res.status(200).json({
       success: true,
