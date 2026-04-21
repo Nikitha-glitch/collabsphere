@@ -23,6 +23,13 @@ const ConversationSchema = new mongoose.Schema(
     // Conversation description
     description: String,
 
+    // Associated Firebase Project ID (for Project Group Chats)
+    projectId: {
+      type: String,
+      index: true,
+      default: null,
+    },
+
     // Is this a group chat or 1-1
     isGroup: {
       type: Boolean,

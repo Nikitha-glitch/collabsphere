@@ -275,11 +275,8 @@ class ApiService {
       // --- CHAT & COLLABORATION (Attached to Projects for Security Rule Bypass) ---
       if (endpoint.includes('/chat') && method === 'POST') {
         const msgData = { ...body, createdAt: new Date().toISOString() };
-        // We ensure a unique id for array manipulation if needed
-        const uniqueId = Date.now().toString() + Math.floor(Math.random()*1000);
-        await updateDoc(doc(db, "projects", body.projectId), {
-          messages: arrayUnion({ ...msgData, _id: uniqueId })
-        });
+        // We write to a scalable subcollection 'messages' instead of the hacky arrayUnion
+        await addDoc(collection(db, "projects", body.projectId, "messages"), msgData);
         return { success: true };
       }
 
@@ -317,16 +314,30 @@ class ApiService {
   // --- REAL-TIME LISTENERS ---
   listenToChat(projectId, callback) {
     const docRef = doc(db, "projects", projectId);
-    return onSnapshot(docRef, (docSnap) => {
+    const msgsQuery = query(collection(db, "projects", projectId, "messages"));
+    
+    let currentSharedCode = '// Start collaborating here...\n';
+    let currentMessages = [];
+
+    const unsubDoc = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data();
-        const messages = data.messages || [];
-        messages.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
-        callback(messages, data.sharedCode);
+        currentSharedCode = docSnap.data().sharedCode || currentSharedCode;
+        callback(currentMessages, currentSharedCode);
       }
-    }, (error) => {
-      console.error("Project listener error:", error);
-    });
+    }, (error) => console.error("Project doc listener error:", error));
+
+    const unsubMsgs = onSnapshot(msgsQuery, (snapshot) => {
+      const msgs = [];
+      snapshot.forEach(d => msgs.push({ _id: d.id, ...d.data() }));
+      msgs.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+      currentMessages = msgs;
+      callback(currentMessages, currentSharedCode);
+    }, (error) => console.error("Messages subcollection error:", error));
+
+    return () => {
+      unsubDoc();
+      unsubMsgs();
+    };
   }
 
   // --- BACKEND API REQUESTS ---

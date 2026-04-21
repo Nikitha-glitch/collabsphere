@@ -150,12 +150,72 @@ exports.createOrGetConversation = asyncHandler(async (req, res) => {
   let conversation = await Conversation.findOne({
     participants: { $all: participantIds },
     isGroup: participantIds.length > 2,
+    projectId: null, // explicitly ensure it's not a project group chat
   });
 
   if (!conversation) {
     conversation = await Conversation.create({
       participants: participantIds,
       isGroup: participantIds.length > 2,
+    });
+  }
+
+  await conversation.populate('participants', 'firstName lastName avatar email');
+
+  res.status(200).json({
+    success: true,
+    message: conversation ? 'Conversation found' : 'Conversation created',
+    data: conversation,
+  });
+});
+
+/**
+ * Create or get a project conversation group
+ * @route   POST /api/messages/project/:projectId
+ * @desc    Create a new project group conversation or get existing one
+ * @access  Private
+ */
+exports.createOrGetProjectConversation = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  const { participantIds, projectName } = req.body;
+
+  if (!projectId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Project ID is required',
+    });
+  }
+
+  // Check if project group conversation already exists
+  let conversation = await Conversation.findOne({ projectId });
+
+  if (conversation) {
+    // Sync participants if there's any change
+    if (participantIds && Array.isArray(participantIds)) {
+       // Check if we need to update participants
+       const currentIds = conversation.participants.map(p => p.toString());
+       const hasChanges = participantIds.some(id => !currentIds.includes(id)) || 
+                          currentIds.some(id => !participantIds.includes(id));
+       
+       if (hasChanges) {
+         conversation.participants = participantIds;
+         await conversation.save();
+       }
+    }
+  } else {
+    // Create new project conversation
+    if (!participantIds || !Array.isArray(participantIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Participant IDs are required when creating a new project chat',
+      });
+    }
+
+    conversation = await Conversation.create({
+      participants: participantIds,
+      isGroup: true,
+      projectId,
+      name: projectName || 'Project Group Chat'
     });
   }
 

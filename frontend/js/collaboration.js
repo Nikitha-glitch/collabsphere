@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // UI Elements
-    const chatMessages = document.getElementById('chatMessages');
-    const chatInput = document.getElementById('chatInput');
-    const sendMsgBtn = document.getElementById('sendMsgBtn');
+    const chatMessages = document.getElementById('collabChatMessages');
+    const chatInput = document.getElementById('collabChatInput');
+    const sendMsgBtn = document.getElementById('collabSendMsgBtn');
     const codeArea = document.getElementById('codeArea');
     const saveCodeBtn = document.getElementById('saveCodeBtn');
     const projectTitleHeader = document.getElementById('projectTitleHeader');
@@ -33,19 +33,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Render Team
             const members = currentProject.teamMembers || [];
-            // Add creator too
+            // Add creator too (creatorId is usually present in doc)
+            const creator = currentProject.creator || { firstName: 'Owner', lastName: '' };
             const allMembers = [
-                { firstName: currentProject.creator.firstName, lastName: currentProject.creator.lastName, isCreator: true },
+                { firstName: creator.firstName, lastName: creator.lastName, isCreator: true },
                 ...members
             ];
 
             teamList.innerHTML = allMembers.map(m => `
                 <div class="team-member">
                     <div class="member-avatar" style="${m.isCreator ? 'background:#F59E0B' : ''}">
-                        ${m.firstName[0]}
+                        ${m.firstName ? m.firstName[0] : 'U'}
                     </div>
                     <div>
-                        <div style="font-size:0.9rem; font-weight:600;">${m.firstName} ${m.lastName}</div>
+                        <div style="font-size:0.9rem; font-weight:600;">${m.firstName || 'User'} ${m.lastName || ''}</div>
                         <div style="font-size:0.75rem; color:var(--text-muted)">${m.isCreator ? 'Lead' : 'Contributor'}</div>
                     </div>
                 </div>
@@ -70,10 +71,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${isMine ? 'sent' : 'received'}`;
             // Safe escaping and whitespace preservation
-            const safeText = msg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const text = msg.text || msg.content || '';
+            const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const senderName = msg.senderName || (msg.sender ? `${msg.sender.firstName} ${msg.sender.lastName}` : 'Anonymous');
+            
             msgDiv.innerHTML = `
                 <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: 4px; display: flex; justify-content: space-between;">
-                    <span>${msg.senderName}</span>
+                    <span>${senderName}</span>
                     <span>${new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div style="white-space: pre-wrap; word-break: break-all; font-family: inherit;">${safeText}</div>
@@ -97,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 text
             });
             chatInput.value = '';
-            // No need to manually reload, the real-time listener will trigger
+            chatInput.style.height = 'auto'; 
         } catch (err) {
             console.error("Send message error:", err);
             api.showToast(`Message failed: ${err.message}`, 'error');

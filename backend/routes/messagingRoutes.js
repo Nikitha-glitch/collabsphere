@@ -11,6 +11,7 @@ const {
   getMessages,
   sendMessage,
   createOrGetConversation,
+  createOrGetProjectConversation,
   markMessagesAsRead,
   deleteMessage,
   editMessage,
@@ -30,6 +31,13 @@ router.get('/conversations/:userId', protect, getConversations);
  * @access  Private
  */
 router.post('/conversations', protect, createOrGetConversation);
+
+/**
+ * @route   POST /api/messages/project/:projectId
+ * @desc    Create or get a project group conversation
+ * @access  Private
+ */
+router.post('/project/:projectId', protect, createOrGetProjectConversation);
 
 /**
  * @route   GET /api/messages/:conversationId
