@@ -6,6 +6,7 @@
 const { asyncHandler } = require('../middleware/errorMiddleware');
 const User = require('../models/User');
 const { generateToken } = require('../utils/generateToken');
+const bcrypt = require('bcryptjs');
 
 /**
  * Register a new user
@@ -14,16 +15,48 @@ const { generateToken } = require('../utils/generateToken');
  * @access  Public
  */
 exports.register = asyncHandler(async (req, res, next) => {
-  // TODO: Implement registration logic
-  // 1. Validate user input
-  // 2. Check if user already exists
-  // 3. Create user
-  // 4. Generate token
-  // 5. Send response
+  const { firstName, lastName, email, password, phone = '', skills = [] } = req.body;
+
+  // Validate input
+  if (!firstName || !lastName || !email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide all required fields',
+    });
+  }
+
+  // Check if user already exists
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      message: 'User already exists with this email',
+    });
+  }
+
+  // Create user
+  const user = await User.create({
+    firstName,
+    lastName,
+    email: email.toLowerCase(),
+    password,
+    phone,
+    skills,
+  });
+
+  // Generate token
+  const token = generateToken(user._id);
 
   res.status(201).json({
     success: true,
-    message: 'Register endpoint - Implementation pending',
+    message: 'User registered successfully',
+    token,
+    user: {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
   });
 });
 
@@ -34,16 +67,47 @@ exports.register = asyncHandler(async (req, res, next) => {
  * @access  Public
  */
 exports.login = asyncHandler(async (req, res, next) => {
-  // TODO: Implement login logic
-  // 1. Validate email and password
-  // 2. Check if user exists
-  // 3. Verify password
-  // 4. Generate token
-  // 5. Send response with token
+  const { email, password } = req.body;
+
+  // Validate input
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide email and password',
+    });
+  }
+
+  // Check if user exists
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials',
+    });
+  }
+
+  // Verify password
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials',
+    });
+  }
+
+  // Generate token
+  const token = generateToken(user._id);
 
   res.status(200).json({
     success: true,
-    message: 'Login endpoint - Implementation pending',
+    message: 'Login successful',
+    token,
+    user: {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
   });
 });
 
@@ -54,13 +118,9 @@ exports.login = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.logout = asyncHandler(async (req, res, next) => {
-  // TODO: Implement logout logic
-  // 1. Clear session/token (if using sessions)
-  // 2. Send response
-
   res.status(200).json({
     success: true,
-    message: 'Logout endpoint - Implementation pending',
+    message: 'Logout successful. Please clear the token from client side.',
   });
 });
 
@@ -71,12 +131,10 @@ exports.logout = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.getCurrentUser = asyncHandler(async (req, res, next) => {
-  // TODO: Implement get current user logic
-  // 1. Get user from request (already authenticated)
-  // 2. Send user data
+  const user = await User.findById(req.user._id);
 
   res.status(200).json({
     success: true,
-    message: 'Get current user endpoint - Implementation pending',
+    data: user,
   });
 });

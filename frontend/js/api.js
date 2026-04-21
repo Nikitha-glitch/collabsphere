@@ -63,6 +63,11 @@ class ApiService {
     const method = options.method || 'GET';
     const body = options.body ? JSON.parse(options.body) : null;
 
+    // --- MESSAGING ENDPOINTS (Route to backend) ---
+    if (endpoint.includes('/messages')) {
+      return this.makeBackendRequest(endpoint, options);
+    }
+
     try {
       // --- AUTHENTICATION ---
       if (endpoint.includes('/auth/register')) {
@@ -322,6 +327,34 @@ class ApiService {
     }, (error) => {
       console.error("Project listener error:", error);
     });
+  }
+
+  // --- BACKEND API REQUESTS ---
+  async makeBackendRequest(endpoint, options = {}) {
+    const method = options.method || 'GET';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.token || ''}`,
+    };
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method,
+        headers,
+        body: options.body || undefined,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Backend API Error:', error);
+      throw error;
+    }
   }
 
   // HTTP wrappers

@@ -13,15 +13,40 @@ const User = require('../models/User');
  * @access  Public
  */
 exports.getAllUsers = asyncHandler(async (req, res, next) => {
-  // TODO: Implement get all users logic
-  // 1. Get query parameters (page, limit, search, skills, etc.)
-  // 2. Apply filters
-  // 3. Implement pagination
-  // 4. Return users list
+  const { page = 1, limit = 10, search = '', skills = '' } = req.query;
+  const skip = (page - 1) * limit;
+
+  let query = {};
+  if (search) {
+    query = {
+      $or: [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ],
+    };
+  }
+
+  if (skills) {
+    query.skills = { $in: skills.split(',') };
+  }
+
+  const total = await User.countDocuments(query);
+  const users = await User.find(query)
+    .select('-password')
+    .limit(limit)
+    .skip(skip)
+    .sort({ createdAt: -1 });
 
   res.status(200).json({
     success: true,
-    message: 'Get all users endpoint - Implementation pending',
+    data: users,
+    pagination: {
+      current: page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
   });
 });
 
@@ -32,14 +57,21 @@ exports.getAllUsers = asyncHandler(async (req, res, next) => {
  * @access  Public
  */
 exports.getUserById = asyncHandler(async (req, res, next) => {
-  // TODO: Implement get user by ID logic
-  // 1. Get user ID from params
-  // 2. Find user
-  // 3. Return user data (without sensitive info)
+  const user = await User.findById(req.params.id)
+    .select('-password')
+    .populate('createdProjects')
+    .populate('joinedProjects');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found',
+    });
+  }
 
   res.status(200).json({
     success: true,
-    message: 'Get user by ID endpoint - Implementation pending',
+    data: user,
   });
 });
 
@@ -50,13 +82,13 @@ exports.getUserById = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.getUserProfile = asyncHandler(async (req, res, next) => {
-  // TODO: Implement get user profile logic
-  // 1. Get user from req.user (already authenticated)
-  // 2. Return user's complete profile
+  const user = await User.findById(req.user._id)
+    .populate('createdProjects')
+    .populate('joinedProjects');
 
   res.status(200).json({
     success: true,
-    message: 'Get user profile endpoint - Implementation pending',
+    data: user,
   });
 });
 
@@ -67,15 +99,52 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.updateUserProfile = asyncHandler(async (req, res, next) => {
-  // TODO: Implement update user profile logic
-  // 1. Verify user owns the profile or is admin
-  // 2. Validate input data
-  // 3. Update user fields
-  // 4. Return updated user
+  const userId = req.params.id;
+  
+  // Verify user is updating their own profile or is admin
+  if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Not authorized to update this profile',
+    });
+  }
+
+  const allowedFields = [
+    'firstName',
+    'lastName',
+    'bio',
+    'phone',
+    'skills',
+    'institution',
+    'degree',
+    'major',
+    'socialLinks',
+    'profileImage',
+  ];
+
+  const updateData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
+  const user = await User.findByIdAndUpdate(userId, updateData, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found',
+    });
+  }
 
   res.status(200).json({
     success: true,
-    message: 'Update user profile endpoint - Implementation pending',
+    message: 'Profile updated successfully',
+    data: user,
   });
 });
 
@@ -86,14 +155,27 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.deleteUser = asyncHandler(async (req, res, next) => {
-  // TODO: Implement delete user logic
-  // 1. Verify user owns the account or is admin
-  // 2. Delete user document
-  // 3. Clean up associated data (projects, registrations, etc.)
-  // 4. Return success message
+  const userId = req.params.id;
+
+  // Verify user is deleting their own account or is admin
+  if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Not authorized to delete this account',
+    });
+  }
+
+  const user = await User.findByIdAndDelete(userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found',
+    });
+  }
 
   res.status(200).json({
     success: true,
-    message: 'Delete user endpoint - Implementation pending',
+    message: 'User account deleted successfully',
   });
 });

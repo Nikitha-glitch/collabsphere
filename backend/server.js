@@ -6,11 +6,20 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const socketIO = require('socket.io');
 const connectDB = require('./config/db');
 const { errorHandler, asyncHandler } = require('./middleware/errorMiddleware');
 
 // Initialize Express app
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: true,
+    credentials: true,
+  },
+});
 
 // ==========================
 // Database Connection
@@ -69,6 +78,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
 const joinRoutes = require('./routes/joinRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
+const messagingRoutes = require('./routes/messagingRoutes');
 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -78,6 +88,77 @@ app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/join-requests', joinRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/messages', messagingRoutes);
+
+// ==========================
+// Socket.IO Setup
+// ==========================
+
+// Map to store online users
+const onlineUsers = new Map();
+
+io.on('connection', (socket) => {
+  console.log(`[SOCKET] New user connected: ${socket.id}`);
+
+  // User comes online
+  socket.on('user:online', (userId) => {
+    onlineUsers.set(userId, socket.id);
+    io.emit('users:online', Array.from(onlineUsers.keys()));
+    console.log(`[SOCKET] User ${userId} is online`);
+  });
+
+  // User sends a message
+  socket.on('message:send', async (data) => {
+    const { conversationId, senderId, recipientId, content, messageType, codeData } = data;
+    console.log(`[SOCKET] Message from ${senderId} to conversation ${conversationId}`);
+    
+    // Broadcast to recipient and sender
+    io.emit(`message:new:${conversationId}`, {
+      conversationId,
+      senderId,
+      recipientId,
+      content,
+      messageType,
+      codeData,
+      timestamp: new Date(),
+    });
+  });
+
+  // User marks messages as read
+  socket.on('message:read', (conversationId) => {
+    io.emit(`messages:read:${conversationId}`, { conversationId });
+  });
+
+  // Typing indicator
+  socket.on('typing:start', (conversationId, userId) => {
+    io.emit(`typing:${conversationId}`, { userId, isTyping: true });
+  });
+
+  socket.on('typing:stop', (conversationId, userId) => {
+    io.emit(`typing:${conversationId}`, { userId, isTyping: false });
+  });
+
+  // User goes offline
+  socket.on('user:offline', (userId) => {
+    onlineUsers.delete(userId);
+    io.emit('users:online', Array.from(onlineUsers.keys()));
+    console.log(`[SOCKET] User ${userId} is offline`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[SOCKET] User disconnected: ${socket.id}`);
+    for (let [userId, socketId] of onlineUsers.entries()) {
+      if (socketId === socket.id) {
+        onlineUsers.delete(userId);
+        io.emit('users:online', Array.from(onlineUsers.keys()));
+        break;
+      }
+    }
+  });
+});
+
+// Make io accessible to routes
+app.set('io', io);
 
 // ==========================
 // 404 Not Found Handler
@@ -99,15 +180,33 @@ app.use(errorHandler);
 // Server Startup
 // ==========================
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
+const os = require('os');
 
-const server = app.listen(PORT, () => {
+// Get local IP address
+const getLocalIP = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+const localIP = getLocalIP();
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log('\n' + '='.repeat(50));
   console.log('🚀 CollabSphere Backend Server');
   console.log('='.repeat(50));
   console.log(`📍 Server running on: http://localhost:${PORT}`);
+  console.log(`🌐 External IP: http://${localIP}:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`💻 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`🔌 WebSocket enabled on port ${PORT}`);
   console.log('='.repeat(50) + '\n');
 });
 

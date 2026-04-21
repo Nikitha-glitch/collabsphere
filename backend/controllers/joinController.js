@@ -5,6 +5,8 @@
 
 const { asyncHandler } = require('../middleware/errorMiddleware');
 const JoinRequest = require('../models/JoinRequest');
+const Project = require('../models/Project');
+const User = require('../models/User');
 
 /**
  * Create join request
@@ -13,16 +15,64 @@ const JoinRequest = require('../models/JoinRequest');
  * @access  Private
  */
 exports.createJoinRequest = asyncHandler(async (req, res, next) => {
-  // TODO: Implement create join request logic
-  // 1. Validate project and user IDs
-  // 2. Check if user is not already in project
-  // 3. Check if join request already exists
-  // 4. Create join request document
-  // 5. Return created request
+  const { projectId, coverLetter = '', proposedRole = 'Team Member' } = req.body;
+  const userId = req.user._id;
+
+  // Validate project exists
+  const project = await Project.findById(projectId);
+  if (!project) {
+    return res.status(404).json({
+      success: false,
+      message: 'Project not found',
+    });
+  }
+
+  // Check if user is already a team member
+  if (project.teamMembers.includes(userId)) {
+    return res.status(400).json({
+      success: false,
+      message: 'You are already a member of this project',
+    });
+  }
+
+  // Check if user is project creator
+  if (project.creator.toString() === userId.toString()) {
+    return res.status(400).json({
+      success: false,
+      message: 'You are the creator of this project',
+    });
+  }
+
+  // Check if join request already exists
+  const existingRequest = await JoinRequest.findOne({
+    project: projectId,
+    requester: userId,
+    status: 'pending',
+  });
+
+  if (existingRequest) {
+    return res.status(400).json({
+      success: false,
+      message: 'You already have a pending request for this project',
+    });
+  }
+
+  // Create join request
+  const joinRequest = await JoinRequest.create({
+    project: projectId,
+    requester: userId,
+    coverLetter,
+    proposedRole,
+  });
+
+  // Populate user data
+  await joinRequest.populate('requester', 'firstName lastName email');
+  await joinRequest.populate('project', 'title');
 
   res.status(201).json({
     success: true,
-    message: 'Create join request endpoint - Implementation pending',
+    message: 'Join request created successfully',
+    data: joinRequest,
   });
 });
 
@@ -33,15 +83,32 @@ exports.createJoinRequest = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.getJoinRequests = asyncHandler(async (req, res, next) => {
-  // TODO: Implement get join requests logic
-  // 1. Get current user's projects
-  // 2. Fetch all pending join requests for those projects
-  // 3. Populate user data for requester
-  // 4. Return join requests
+  const userId = req.user._id;
+
+  // Get all projects created by user
+  const userProjects = await Project.find({ creator: userId });
+  const projectIds = userProjects.map(p => p._id);
+
+  if (projectIds.length === 0) {
+    return res.status(200).json({
+      success: true,
+      data: [],
+      message: 'No projects found',
+    });
+  }
+
+  // Fetch all pending join requests for those projects
+  const joinRequests = await JoinRequest.find({
+    project: { $in: projectIds },
+    status: 'pending',
+  })
+    .populate('requester', 'firstName lastName email profileImage')
+    .populate('project', 'title');
 
   res.status(200).json({
     success: true,
-    message: 'Get join requests endpoint - Implementation pending',
+    data: joinRequests,
+    count: joinRequests.length,
   });
 });
 
@@ -52,18 +119,74 @@ exports.getJoinRequests = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.respondToJoinRequest = asyncHandler(async (req, res, next) => {
-  // TODO: Implement respond to join request logic
-  // 1. Get request ID from params
-  // 2. Verify user is project creator
-  // 3. Get request and validate status
-  // 4. If accept: add user to team, update user's joinedProjects
-  // 5. If reject: add rejection reason
-  // 6. Update request status
-  // 7. Return updated request
+  const { id } = req.params;
+  const { status, rejectionReason = '' } = req.body;
+  const userId = req.user._id;
+
+  // Validate status
+  if (!['accepted', 'rejected'].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid status. Must be "accepted" or "rejected"',
+    });
+  }
+
+  // Get join request
+  const joinRequest = await JoinRequest.findById(id);
+  if (!joinRequest) {
+    return res.status(404).json({
+      success: false,
+      message: 'Join request not found',
+    });
+  }
+
+  // Check if already responded
+  if (joinRequest.status !== 'pending') {
+    return res.status(400).json({
+      success: false,
+      message: `This request has already been ${joinRequest.status}`,
+    });
+  }
+
+  // Verify user is project creator
+  const project = await Project.findById(joinRequest.project);
+  if (project.creator.toString() !== userId.toString()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Only project creator can respond to join requests',
+    });
+  }
+
+  // Update join request
+  joinRequest.status = status;
+  joinRequest.respondedAt = Date.now();
+  joinRequest.respondedBy = userId;
+
+  if (status === 'rejected') {
+    joinRequest.rejectionReason = rejectionReason;
+  }
+
+  await joinRequest.save();
+
+  // If accepted, add user to project team
+  if (status === 'accepted') {
+    await Project.findByIdAndUpdate(joinRequest.project, {
+      $addToSet: { teamMembers: joinRequest.requester },
+    });
+
+    // Add project to user's joinedProjects
+    await User.findByIdAndUpdate(joinRequest.requester, {
+      $addToSet: { joinedProjects: joinRequest.project },
+    });
+  }
+
+  await joinRequest.populate('requester', 'firstName lastName email');
+  await joinRequest.populate('project', 'title');
 
   res.status(200).json({
     success: true,
-    message: 'Respond to join request endpoint - Implementation pending',
+    message: `Join request ${status} successfully`,
+    data: joinRequest,
   });
 });
 
@@ -74,14 +197,36 @@ exports.respondToJoinRequest = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.cancelJoinRequest = asyncHandler(async (req, res, next) => {
-  // TODO: Implement cancel join request logic
-  // 1. Get request ID from params
-  // 2. Verify user is request creator or project owner
-  // 3. Delete join request
-  // 4. Return success message
+  const { id } = req.params;
+  const userId = req.user._id;
+
+  // Get join request
+  const joinRequest = await JoinRequest.findById(id);
+  if (!joinRequest) {
+    return res.status(404).json({
+      success: false,
+      message: 'Join request not found',
+    });
+  }
+
+  // Verify user is request creator or project owner
+  const project = await Project.findById(joinRequest.project);
+
+  const isRequester = joinRequest.requester.toString() === userId.toString();
+  const isProjectOwner = project.creator.toString() === userId.toString();
+
+  if (!isRequester && !isProjectOwner) {
+    return res.status(403).json({
+      success: false,
+      message: 'You do not have permission to cancel this request',
+    });
+  }
+
+  // Delete join request
+  await JoinRequest.findByIdAndDelete(id);
 
   res.status(200).json({
     success: true,
-    message: 'Cancel join request endpoint - Implementation pending',
+    message: 'Join request cancelled successfully',
   });
 });
