@@ -1,17 +1,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
-import { getFirestore, collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { initializeFirestore, enableNetwork, collection, addDoc, getDocs, getDoc, doc, query, where, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBJN1mvR0Ge1jRmg4kxIgjYUb3l_g2u2dM",
-  authDomain: "collabsphere-be6bf.firebaseapp.com",
-  projectId: "collabsphere-be6bf",
-  storageBucket: "collabsphere-be6bf.firebasestorage.app",
-  messagingSenderId: "929501692595",
-  appId: "1:929501692595:web:ae19e389f342011fab26c6",
-  measurementId: "G-LVNEV27JC8"
+  apiKey: "AIzaSyBGMrS1w2nQK9_jZhv9pO33uHyeadWE95E",
+  authDomain: "collabsphere-be6bf-787b2.firebaseapp.com",
+  projectId: "collabsphere-be6bf-787b2",
+  storageBucket: "collabsphere-be6bf-787b2.firebasestorage.app",
+  messagingSenderId: "460744407282",
+  appId: "1:460744407282:web:c78f3a98227c2d156fb86b",
+  measurementId: "G-TDYF3YS3YE"
 };
 
 // Initialize Firebase
@@ -20,8 +20,13 @@ try {
   console.log("[FIREBASE] Initializing SDK...");
   app = initializeApp(firebaseConfig);
   analytics = getAnalytics(app);
-  db = getFirestore(app);
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  });
   auth = getAuth(app);
+  enableNetwork(db).catch((error) => {
+    console.warn("[FIREBASE] Could not explicitly enable Firestore network:", error);
+  });
 
   console.log("[FIREBASE] SDK initialized successfully.");
 } catch (error) {

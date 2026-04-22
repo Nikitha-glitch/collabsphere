@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | CollabSphere</title>
+    <title>CollabSphere</title>
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/animations.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -43,6 +43,14 @@
 
         .content-area {
             padding: 2rem 3rem;
+        }
+
+        .dashboard-section {
+            scroll-margin-top: 110px;
+        }
+
+        .dashboard-panel[hidden] {
+            display: none;
         }
 
         .user-header {
@@ -91,7 +99,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="index.html" class="nav-brand">CollabSphere</a>
+        <a href="dashboard.html" class="nav-brand">CollabSphere</a>
         <div class="nav-links">
             <a href="events.html" class="nav-link">Events</a>
             <a href="projects.html" class="nav-link">Explore</a>
@@ -101,15 +109,15 @@
 
     <div class="main-content dashboard-layout">
         <div class="sidebar">
-            <a href="dashboard.html" class="sidebar-link active"><i class="fa-solid fa-house"></i> Overview</a>
+            <a href="#overview" class="sidebar-link active" data-dashboard-tab="overview"><i class="fa-solid fa-house"></i> Overview</a>
             <a href="createProject.html" class="sidebar-link"><i class="fa-solid fa-plus"></i> Create Project</a>
             <a href="projects.html" class="sidebar-link"><i class="fa-solid fa-magnifying-glass"></i> Find Projects</a>
             <a href="messaging.html" class="sidebar-link"><i class="fa-solid fa-message"></i> Messages</a>
-            <a href="#" class="sidebar-link"><i class="fa-solid fa-envelope"></i> Join Requests</a>
+            <a href="join-requests.html" class="sidebar-link"><i class="fa-solid fa-envelope"></i> Join Requests</a>
         </div>
 
         <div class="content-area animate-fade-in-up">
-            <div class="user-header">
+            <div class="user-header dashboard-section">
                 <div class="user-info">
                     <h2 id="userNameDisplay">Welcome, User</h2>
                     <p style="color: var(--text-muted);" id="userCollegeDisplay">Student</p>
@@ -118,20 +126,24 @@
             </div>
 
             <div class="dashboard-sections">
-                <h3 class="mb-4">My Projects</h3>
-                <div id="myProjectsGrid" class="card-grid mb-8">
-                    <!-- Project Cards populate here -->
-                </div>
+                <section class="dashboard-panel" id="overviewPanel" data-dashboard-panel="overview">
+                    <h3 class="mb-4">My Projects</h3>
+                    <div id="myProjectsGrid" class="card-grid mb-8">
+                        <!-- Project Cards populate here -->
+                    </div>
 
-                <h3 class="mb-4">Active Collaborations</h3>
-                <div id="joinedProjectsGrid" class="card-grid mb-8">
-                    <p style="color:var(--text-muted);">You haven't joined any projects yet.</p>
-                </div>
+                    <h3 class="mb-4">Active Collaborations</h3>
+                    <div id="joinedProjectsGrid" class="card-grid mb-8">
+                        <p style="color:var(--text-muted);">You haven't joined any projects yet.</p>
+                    </div>
+                </section>
 
-                <h3 class="mb-4">Received Join Requests</h3>
-                <div id="requestsGrid" class="glass-panel" style="padding: 1.5rem;">
-                    <p style="color:var(--text-muted);">No pending requests found.</p>
-                </div>
+                <section class="dashboard-panel" id="requestsPanel" data-dashboard-panel="requests" hidden>
+                    <h3 class="mb-4 dashboard-section">Received Join Requests</h3>
+                    <div id="requestsGrid" class="glass-panel" style="padding: 1.5rem;">
+                        <p style="color:var(--text-muted);">No pending requests found.</p>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

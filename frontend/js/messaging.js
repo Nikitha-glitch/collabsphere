@@ -1,16 +1,21 @@
 import { api } from './api.js';
 
 // Socket.IO connection
-const socket = io('http://localhost:5002', {
+const socket = window.io ? io('http://localhost:5002', {
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
   reconnectionAttempts: 5,
-});
+}) : {
+  emit: () => {},
+  on: () => {},
+  off: () => {}
+};
 
 let currentUserId = null;
 let currentConversationId = null;
 let typingTimeout = null;
+let unsubscribeMessages = null;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -117,18 +122,24 @@ async function loadConversation(conversationId, displayName, participant) {
 
   // Load messages
   try {
-    const res = await api.get(`/messages/${conversationId}`);
-    const messages = res.data;
-
     const messageList = document.getElementById('messageList');
-    messageList.innerHTML = '';
+    messageList.innerHTML = '<div style="color: var(--text-muted);">Loading messages...</div>';
 
-    messages.forEach((msg) => {
-      displayMessage(msg);
+    if (unsubscribeMessages) unsubscribeMessages();
+    unsubscribeMessages = api.listenToMessages(conversationId, (messages) => {
+      messageList.innerHTML = '';
+
+      if (messages.length === 0) {
+        messageList.innerHTML = '<div style="color: var(--text-muted); text-align:center; margin:auto;">No messages yet.</div>';
+        return;
+      }
+
+      messages.forEach((msg) => {
+        displayMessage(msg);
+      });
+
+      messageList.scrollTop = messageList.scrollHeight;
     });
-
-    // Scroll to bottom
-    messageList.scrollTop = messageList.scrollHeight;
   } catch (error) {
     console.error('Error loading messages:', error);
     api.showToast('Failed to load messages', 'error');
@@ -228,9 +239,9 @@ function setupEventListeners() {
   });
 
   // Logout
-  document.getElementById('logoutBtn').addEventListener('click', (e) => {
+  document.getElementById('logoutBtn').addEventListener('click', async (e) => {
     e.preventDefault();
-    api.clearToken();
+    await api.clearToken();
     socket.emit('user:offline', currentUserId);
     window.location.href = 'login.html';
   });
@@ -294,7 +305,6 @@ async function sendMessage() {
 
     messageInput.value = '';
     messageInput.style.height = 'auto';
-    displayMessage(res.data);
 
     // Emit through socket for real-time update
     socket.emit('message:send', {
@@ -331,7 +341,6 @@ async function sendCode() {
 
     codeInput.value = '';
     document.getElementById('codeEditor').classList.remove('active');
-    displayMessage(res.data);
 
     socket.emit('message:send', {
       conversationId: currentConversationId,

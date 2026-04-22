@@ -15,9 +15,9 @@ const Event = require('../models/Event');
  * Primary model first, then fallback options in order
  */
 const AI_MODELS = [
+  'gemini-pro',
   'gemini-1.5-flash',
-  'gemini-1.5-pro',
-  'gemini-pro', // legacy name for 1.0
+  'gemini-1.5-pro'
 ];
 
 /**
@@ -116,10 +116,19 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 
   } catch (error) {
     console.error('Gemini Generation Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to communicate with AI',
-      reply: 'Sorry, I ran into a cognitive error. Please try again later.'
+    
+    // Provide a helpful fallback response if AI fails
+    const fallbackResponse = `
+    I'm currently having a bit of trouble connecting to my AI brain, but I'm still here to help! <br><br>
+    You can check out our current projects here: <a href="projects.html" style="color:var(--primary);text-decoration:underline;">Explore Projects</a><br>
+    Or see upcoming college events: <a href="events.html" style="color:#34D399;text-decoration:underline;">Events</a><br><br>
+    If you're having technical issues, make sure your GEMINI_API_KEY is active!
+    `;
+
+    res.status(200).json({
+      success: true,
+      reply: fallbackResponse,
+      isFallback: true
     });
   }
 });

@@ -6,6 +6,16 @@ if (api.token && (window.location.pathname.includes('login.html') || window.loca
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const buildFallbackUser = (email, token) => ({
+        _id: token,
+        firstName: email.split('@')[0] || 'User',
+        lastName: '',
+        email,
+        institution: '',
+        degree: 'Student',
+        major: ''
+    });
+
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
@@ -28,9 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await api.post('/auth/register', payload);
                 api.setToken(response.token);
-                // fetch user
-                const userRes = await api.get('/auth/me');
-                api.setCurrentUser(userRes.data);
+                try {
+                    const userRes = await api.get('/auth/me');
+                    api.setCurrentUser(userRes.data);
+                } catch (profileError) {
+                    api.setCurrentUser(buildFallbackUser(payload.email, response.token));
+                    console.warn('Profile fetch failed after registration:', profileError);
+                }
 
                 
                 api.showToast('Registration successful! Redirecting...', 'success');
@@ -62,9 +76,18 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await api.post('/auth/login', payload);
                 api.setToken(response.token);
-                // get user profile info
-                const userRes = await api.get('/auth/me');
-                api.setCurrentUser(userRes.data);
+                try {
+                    const userRes = await api.get('/auth/me');
+                    api.setCurrentUser(userRes.data);
+                } catch (profileError) {
+                    api.setCurrentUser(buildFallbackUser(payload.email, response.token));
+                    console.warn('Profile fetch failed after login:', profileError);
+                    api.showToast('Logged in. Profile data will sync when connection is available.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                    return;
+                }
 
 
                 api.showToast('Login successful!', 'success');
@@ -82,9 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle logout anywhere
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
+        logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            api.clearToken();
+            logoutBtn.disabled = true;
+            await api.clearToken();
             window.location.href = 'index.html';
         });
     }

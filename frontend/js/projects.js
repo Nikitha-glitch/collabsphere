@@ -1,5 +1,38 @@
 import { api } from './api.js';
 
+function getPageUrl(fileName, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const currentPath = window.location.pathname;
+    const base = currentPath.includes('/pages/') ? fileName : `/pages/${fileName}`;
+    return query ? `${base}?${query}` : base;
+}
+
+function openProjectDetails(projectId) {
+    if (!projectId) {
+        api.showToast('Unable to open this project. Missing project id.', 'error');
+        return;
+    }
+
+    sessionStorage.setItem('selectedProjectId', projectId);
+    window.location.href = getPageUrl('projectDetails.html', { id: projectId });
+}
+
+function getProjectIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryId = urlParams.get('id');
+    if (queryId) return queryId;
+
+    const pathMatch = window.location.pathname.match(/projectDetails(?:\.html)?\/([^/]+)$/);
+    if (pathMatch) return decodeURIComponent(pathMatch[1]);
+
+    const hashMatch = window.location.hash.match(/^#(?:id=)?(.+)$/);
+    if (hashMatch) return decodeURIComponent(hashMatch[1]);
+
+    return sessionStorage.getItem('selectedProjectId');
+}
+
+window.openProjectDetails = openProjectDetails;
+
 // Session protection
 console.log('[AUTH] Checking session...', api.token ? 'Logged In' : 'Logged Out');
 if (!api.token) {
@@ -70,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 await api.post('/projects', payload);
-                if (window.showToast) window.showToast('Project Created!', 'success');
+                api.showToast('Project created successfully.', 'success');
                 setTimeout(() => window.location.href = 'projects.html', 1000);
 
             } catch (err) {
@@ -96,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 projectsGrid.innerHTML = projects.map(p => `
-                    <div class="glass-panel project-card" onclick="window.location.href='projectDetails.html?id=${p._id}'">
+                    <div class="glass-panel project-card" onclick="window.openProjectDetails('${p._id}')">
                         <div class="project-header">
                             <h3 style="font-size: 1.25rem;">${p.title}</h3>
                             <span class="category-badge">${p.category}</span>
@@ -132,11 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- PROJECT DETAILS LOGIC ---
     const detailContainer = document.getElementById('projectDetailsContainer');
     if (detailContainer) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const projectId = urlParams.get('id');
+        const projectId = getProjectIdFromUrl();
 
         if (!projectId) {
-            detailContainer.innerHTML = '<h2>Project not found</h2>';
+            detailContainer.innerHTML = `
+                <div class="glass-panel" style="grid-column:1/-1; padding:2rem;">
+                    <h2 class="mb-2">Project not found</h2>
+                    <p style="color:var(--text-muted);">Open a project from the Explore page so the project id is included.</p>
+                    <a href="${getPageUrl('projects.html')}" class="btn btn-primary mt-4">Back to Projects</a>
+                </div>
+            `;
             return;
         }
 

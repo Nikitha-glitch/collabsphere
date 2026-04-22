@@ -5,6 +5,58 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/login",
+        "destination": "/pages/login.html",
+        "type": 302
+      },
+      {
+        "source": "/register",
+        "destination": "/pages/register.html",
+        "type": 302
+      },
+      {
+        "source": "/dashboard",
+        "destination": "/pages/dashboard.html",
+        "type": 302
+      },
+      {
+        "source": "/projects",
+        "destination": "/pages/projects.html",
+        "type": 302
+      },
+      {
+        "source": "/projectDetails",
+        "destination": "/pages/projectDetails.html",
+        "type": 302
+      },
+      {
+        "source": "/events",
+        "destination": "/pages/events.html",
+        "type": 302
+      },
+      {
+        "source": "/eventDetails",
+        "destination": "/pages/eventDetails.html",
+        "type": 302
+      },
+      {
+        "source": "/createProject",
+        "destination": "/pages/createProject.html",
+        "type": 302
+      },
+      {
+        "source": "/createEvent",
+        "destination": "/pages/createEvent.html",
+        "type": 302
+      },
+      {
+        "source": "/messaging",
+        "destination": "/pages/messaging.html",
+        "type": 302
+      }
     ]
   }
 }

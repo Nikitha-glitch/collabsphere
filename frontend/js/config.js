@@ -1,12 +1,20 @@
 // Detect if running from a file:// protocol or http://
 const isLocalFile = window.location.protocol === 'file:';
+
+const normalizeApiUrl = (url) => {
+  const trimmed = url.replace(/\/$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
 const getBackendUrl = () => {
+  const savedUrl = localStorage.getItem('collabsphere_api_url');
+  if (savedUrl) {
+    return normalizeApiUrl(savedUrl);
+  }
+
   if (isLocalFile) {
-    // For file:// protocol, use the machine's IP address
-    const hostname = window.location.hostname || '192.168.0.10'; // fallback IP
-    return `http://192.168.0.10:5002/api`;
+    return 'http://localhost:5002/api';
   } else {
-    // For http:// protocol, use the current host
     return `${window.location.protocol}//${window.location.hostname}:5002/api`;
   }
 };

@@ -6,11 +6,13 @@ if (!api.token && window.location.pathname.includes('dashboard.html')) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    setupDashboardTabs();
 
     // Shared: Display user info if logged in
     const userNameDisplay = document.getElementById('userNameDisplay');
     const userCollegeDisplay = document.getElementById('userCollegeDisplay');
     const user = api.getCurrentUser();
+    const userId = user?._id || api.token;
 
 
     if (userNameDisplay && user) {
@@ -20,11 +22,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Dashboard Only Logic
     if (window.location.pathname.includes('dashboard.html')) {
-        if (user) {
-            await fetchDashboardData(user._id);
+        if (userId) {
+            await fetchDashboardData(userId);
         }
     }
 });
+
+function setupDashboardTabs() {
+    const links = document.querySelectorAll('[data-dashboard-tab]');
+    const panels = document.querySelectorAll('[data-dashboard-panel]');
+
+    const activateTab = (tabName) => {
+        const nextTab = document.querySelector(`[data-dashboard-tab="${tabName}"]`);
+        if (!nextTab) return;
+        
+        links.forEach((item) => item.classList.remove('active'));
+        panels.forEach((panel) => {
+            panel.hidden = panel.dataset.dashboardPanel !== tabName;
+        });
+        nextTab.classList.add('active');
+    };
+
+    links.forEach((link) => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const tabName = link.dataset.dashboardTab;
+            window.history.replaceState(null, '', `#${tabName}`);
+            activateTab(tabName);
+        });
+    });
+
+    const initialTab = window.location.hash.replace('#', '') || 'overview';
+    activateTab(initialTab);
+}
 
 async function fetchDashboardData(userId) {
     const grid = document.getElementById('myProjectsGrid');
@@ -39,6 +69,7 @@ async function fetchDashboardData(userId) {
         const res = await api.get(`/projects/user/${userId}`);
 
         const projects = res.data || [];
+        const ownedProjectIds = new Set(projects.map((project) => project._id).filter(Boolean));
 
         if (projects.length === 0) {
             grid.innerHTML = `
@@ -107,9 +138,40 @@ async function fetchDashboardData(userId) {
         const reqsRes = await api.get('/join-requests');
 
         const requests = reqsRes.data || [];
+        console.log('[JOIN REQUESTS] Current user:', userId);
+        console.log('[JOIN REQUESTS] Owned project ids:', Array.from(ownedProjectIds));
+        console.log('[JOIN REQUESTS] Raw requests:', requests);
         
-        // Filter requests pointing to projects creator==userId
-        const myRequests = requests.filter(r => r.project?.creator === userId && r.status === 'pending');
+        // Filter requests pointing to projects created by this user.
+        // Older Firestore records used nested project.creator; newer ones also store projectCreatorId.
+        const globalRequests = requests.filter(r => {
+            const creatorId = r.projectCreatorId || r.project?.creator || r.project?.creatorId;
+            const requestProjectId = r.projectId || r.project?._id || r.project;
+            return r.status === 'pending' && (
+                creatorId === userId ||
+                ownedProjectIds.has(requestProjectId)
+            );
+        });
+        const embeddedRequests = projects.flatMap(project => {
+            return (project.pendingJoinRequests || [])
+                .filter(request => request.status === 'pending')
+                .map(request => ({
+                    ...request,
+                    projectId: request.projectId || project._id,
+                    projectTitle: request.projectTitle || project.title,
+                    project: {
+                        _id: request.projectId || project._id,
+                        title: request.projectTitle || project.title,
+                        creator: request.projectCreatorId || project.creatorId
+                    }
+                }));
+        });
+        const requestMap = new Map();
+        [...globalRequests, ...embeddedRequests].forEach(request => {
+            requestMap.set(request._id, request);
+        });
+        const myRequests = Array.from(requestMap.values());
+        console.log('[JOIN REQUESTS] Matched requests:', myRequests);
 
         if (myRequests.length === 0) {
             reqGrid.innerHTML = `
@@ -123,9 +185,9 @@ async function fetchDashboardData(userId) {
                 <div style="background:rgba(255,255,255,0.05); padding:1rem; border-radius:8px; margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div style="flex:1;">
-                            <strong>${r.requester?.firstName} ${r.requester?.lastName}</strong> wants to join <strong>${r.project?.title}</strong>
+                            <strong>${r.requester?.firstName || 'A student'} ${r.requester?.lastName || ''}</strong> wants to join <strong>${r.project?.title || r.projectTitle || 'your project'}</strong>
                             <div style="font-size:0.85rem; color:var(--primary); margin-top:4px;">
-                                <i class="fa-solid fa-graduation-cap"></i> ${r.requester?.year} @ ${r.requester?.institution}
+                                <i class="fa-solid fa-graduation-cap"></i> ${r.requester?.year || 'Student'} @ ${r.requester?.institution || 'Unknown institution'}
                             </div>
                             <div style="margin-top:10px;">
                                 <p style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">Interest:</p>
@@ -140,7 +202,7 @@ async function fetchDashboardData(userId) {
                         </div>
                         <div style="display:flex; gap:10px;">
                             <button class="btn btn-secondary" onclick="handleRequest('${r._id}', 'rejected')" style="padding:0.5rem 1rem;">Decline</button>
-                            <button class="btn btn-primary" onclick="handleRequest('${r._id}', 'accepted', '${r.project?._id}')" style="padding:0.5rem 1rem;">Accept</button>
+                            <button class="btn btn-primary" onclick="handleRequest('${r._id}', 'accepted', '${r.project?._id || r.projectId}')" style="padding:0.5rem 1rem;">Accept</button>
                         </div>
                     </div>
                 </div>

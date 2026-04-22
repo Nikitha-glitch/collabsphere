@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages | CollabSphere</title>
+    <title>CollabSphere</title>
     
     <!-- CSS -->
     <link rel="stylesheet" href="../css/global.css">
@@ -15,6 +15,7 @@
         .messages-container {
             display: flex;
             height: calc(100vh - 80px);
+            margin-top: 80px;
             background: var(--bg-secondary);
             gap: 1px;
         }
@@ -444,23 +445,12 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <i class="fa-solid fa-message"></i>
-                <span>Messages</span>
-            </div>
-            <ul class="nav-menu">
-                <li><a href="dashboard.html">Dashboard</a></li>
-                <li><a href="projects.html">Projects</a></li>
-                <li><a href="events.html">Events</a></li>
-                <li class="nav-user-menu">
-                    <a href="#"><i class="fa-solid fa-user"></i></a>
-                    <ul class="dropdown">
-                        <li><a href="profile.html">Profile</a></li>
-                        <li><a id="logoutBtn" href="#">Logout</a></li>
-                    </ul>
-                </li>
-            </ul>
+        <a href="dashboard.html" class="nav-brand">CollabSphere</a>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="projects.html" class="nav-link">Projects</a>
+            <a href="events.html" class="nav-link">Events</a>
+            <button id="logoutBtn" class="btn btn-secondary">Logout</button>
         </div>
     </nav>
 

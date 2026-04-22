@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "test": "node scripts/validate-project.js"
+  },
   "dependencies": {
     "socket.io": "^4.8.3"
   }
